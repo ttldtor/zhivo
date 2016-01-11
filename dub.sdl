@@ -1,0 +1,5 @@
+name "zhivo"
+description "The game of Life on D"
+copyright "Copyright © 2016, ttldtor"
+authors "ttldtor"
+dependency "consoled" version="~>1.0.0"
