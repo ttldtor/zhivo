@@ -12,15 +12,21 @@ import std.format;
 alias Tuple!(int, "width", int, "height") Size;
 alias Tuple!(int, "x", int, "y") Pos;
 
-void drawBorder(Pos begin, Pos end) {
-    drawVerticalLine(begin, end.y - begin.y, '|');
-    drawVerticalLine(ConsolePoint(end.x, begin.y), end.y - begin.y, '|');
-    drawHorizontalLine(begin, end.x - begin.x, '-');
-    drawHorizontalLine(ConsolePoint(begin.x, end.y), end.x - begin.x, '-');
-    writeAt(begin, '+');
-    writeAt(ConsolePoint(end.x, begin.y), '+');
-    writeAt(ConsolePoint(begin.x, end.y), '+');
-    writeAt(end, '+');
+struct BorderScheme {
+    static const Default = BorderScheme('+', '-', '+', '|', '|', '+', '-', '+');
+
+    char topLeftCorner, topHLine, topRightCorner, leftVLine, rightVLine, bottomLeftCorner, bottomHLine, bottomRightCorner;
+};
+
+void drawBorder(Pos begin, Pos end, BorderScheme scheme = BorderScheme.Default) {
+    drawVerticalLine(begin, end.y - begin.y, scheme.leftVLine);
+    drawVerticalLine(ConsolePoint(end.x, begin.y), end.y - begin.y, scheme.rightVLine);
+    drawHorizontalLine(begin, end.x - begin.x, scheme.topHLine);
+    drawHorizontalLine(ConsolePoint(begin.x, end.y), end.x - begin.x, scheme.bottomHLine);
+    writeAt(begin, scheme.topLeftCorner);
+    writeAt(ConsolePoint(end.x, begin.y), scheme.topRightCorner);
+    writeAt(ConsolePoint(begin.x, end.y), scheme.bottomLeftCorner);
+    writeAt(end, scheme.bottomRightCorner);
 }
 
 class Game {
@@ -74,7 +80,10 @@ class Game {
             showGenerationAndPopulation();
         }
 
-        int countNeighbours(int x, int y) {
+        int countNeighbours(int x, int y)
+        in {
+            assert(x >=0 && x < size.width && y >= 0 && y < size.height);
+        } body {
             int result = 0;
 
             for (int j = -1; j <= 1; j++) {
@@ -172,20 +181,16 @@ class Game {
 };
 
 void main() {
-    auto fg = foreground;
+    clearScreen();
 
-    writecln("The game of ", Fg.yellow, "Life", Fg.initial, " on ", Fg.red, "D");
-    
-    foreground = fg;
-
-    writeln(consoleSize);
+    writecln("The game of ", Fg.yellow, "Life", Fg.initial, " on ", Fg.red, "D", Fg.initial);
     Thread.sleep(dur!"seconds"(2));
 
     clearScreen();
 
     auto g = new Game(Size(consoleWidth - 2, consoleHeight - 3));
 
-    g.start;
+    g.start();
 
     Thread.sleep(dur!"seconds"(10));
 }
