@@ -1,11 +1,13 @@
 import std.typecons;
 import std.stdio;
-import consoled : drawVerticalLine, drawHorizontalLine, writeAt, foreground, ConsolePoint, Fg, writecln, clearScreen, consoleSize = size, consoleWidth = width, consoleHeight = height;
+import consoled : drawVerticalLine, setCursorPos, drawHorizontalLine, writeAt, foreground, ConsolePoint, Fg, writecln, writec, 
+    clearScreen, consoleSize = size, consoleWidth = width, consoleHeight = height;
 import core.thread;
 import std.random;
 import std.algorithm.iteration;
 import std.parallelism;
 import std.ascii;
+import std.format;
 
 alias Tuple!(int, "width", int, "height") Size;
 alias Tuple!(int, "x", int, "y") Pos;
@@ -26,6 +28,8 @@ class Game {
     char[][][] maps_;
     int mapIndex_ = 0;
     Pos framePos_ = Pos(0, 0);
+    long generation_ = 1;
+    long population_ = 0;
 
 
     public {
@@ -66,34 +70,42 @@ class Game {
             foreach (y, line; currentMap[framePos.y .. framePos.y + visibleSize.height]) {
                 writeAt(ConsolePoint(1, y + 1), line[framePos.x .. framePos.x + visibleSize.width]);
             }
+
+            showGenerationAndPopulation();
+        }
+
+        int countNeighbours(int x, int y) {
+            int result = 0;
+
+            for (int j = -1; j <= 1; j++) {
+                for (int i = -1; i <= 1; i++) {
+                    if (i == 0 && j == 0) {
+                        continue;
+                    }
+
+                    int ii = (x + i + size.width) % size.width;
+                    int jj = (y + j + size.height) % size.height;
+
+                    if (currentMap[jj][ii] == '*') {
+                        result++;
+                    }
+                }
+            }
+
+            return result;
         }
 
         long applyRules() {
-            long population = 0;
+            population_ = 0;
 
             foreach (y, line; currentMap) {
                 foreach (x, cell; line) {
-                    int neighbours = 0;
-
-                    for (int j = y - 1; j <= y + 1; j++) {
-                        for (int i = x - 1; i <= x + 1; i++) {
-                            if (i == x && j == y) {
-                                continue;
-                            }
-
-                            int ii = (i + size.width) % size.width;
-                            int jj = (j + size.height) % size.height;
-
-                            if (currentMap[jj][ii] == '*') {
-                                neighbours++;
-                            }
-                        }
-                    }
+                    int neighbours = countNeighbours(x, y);
 
                     if ((cell == '*' && (neighbours == 2 || neighbours == 3)) || (cell == ' ' && neighbours == 3)) {
                         tempMap[y][x] = '*';
 
-                        population++;
+                        population_++;
                     } else {
                         tempMap[y][x] = ' ';
                     }
@@ -102,11 +114,16 @@ class Game {
                 }
             }
 
-            return population;
+            return population_;
         }
 
         void swapMaps() {
             mapIndex_ ^= 1;
+        }
+
+        void showGenerationAndPopulation() {
+            setCursorPos(0, consoleHeight - 1);
+            writec("G8n: ", Fg.green, format("%-10d", generation_), Fg.initial, "P8n: ", Fg.yellow, format("%-10d", population_), Fg.initial);
         }
 
         void start() {
@@ -120,6 +137,8 @@ class Game {
                 swapMaps();
 
                 Thread.sleep(dur!"msecs"(10));
+
+                generation_++;
             }
         }
 
