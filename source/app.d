@@ -1,7 +1,7 @@
 import std.typecons;
 import std.stdio;
 import consoled : drawVerticalLine, setCursorPos, drawHorizontalLine, writeAt, foreground, ConsolePoint, Fg, writecln, writec, 
-    clearScreen, consoleSize = size, consoleWidth = width, consoleHeight = height;
+    clearScreen, kbhit, getch, consoleSize = size, consoleWidth = width, consoleHeight = height;
 import core.thread;
 import std.random;
 import std.algorithm.iteration;
@@ -148,6 +148,10 @@ class Game {
                 Thread.sleep(dur!"msecs"(10));
 
                 generation_++;
+
+                if (kbhit) {
+                    int c = getch();
+                }
             }
         }
 
